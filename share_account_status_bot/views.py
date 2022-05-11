@@ -1,5 +1,4 @@
 from os import environ
-from sysconfig import get_scheme_names
 
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseForbidden
@@ -26,33 +25,33 @@ parser = WebhookParser(LINE_CHANNEL_SECRET)
 
 @csrf_exempt
 def callback(request):
-  if request.method == 'POST':
-      signature = request.META['HTTP_X_LINE_SIGNATURE']
-      body = request.body.decode('utf-8')
+    if request.method == 'POST':
+        signature = request.META['HTTP_X_LINE_SIGNATURE']
+        body = request.body.decode('utf-8')
 
-      try:
-          events = parser.parse(body, signature)  # 傳入的事件
-      except InvalidSignatureError:
-          return HttpResponseForbidden()
-      except LineBotApiError:
-          return HttpResponseBadRequest()
+        try:
+            events = parser.parse(body, signature)  # 傳入的事件
+        except InvalidSignatureError:
+            return HttpResponseForbidden()
+        except LineBotApiError:
+            return HttpResponseBadRequest()
 
-      for event in events:
-          if isinstance(event, MessageEvent):  # 如果有訊息事件
-              display_name = get_user_name(event.source.user_id)
+        for event in events:
+            if isinstance(event, MessageEvent):  # 如果有訊息事件
+                display_name = get_user_name(event.source.user_id)
 
-              logging.debug('UserId is: ' + event.source.user_id)
-              logging.debug('Text is: ' + event.message.text)
-              logging.debug('Name is: ' + display_name)
+                logging.debug('UserId is: ' + event.source.user_id)
+                logging.debug('Text is: ' + event.message.text)
+                logging.debug('Name is: ' + display_name)
 
-              text = 'Hi ' + display_name + "\n" + event.message.text
-              line_bot_api.reply_message(  # 回復傳入的訊息文字
-                  event.reply_token,
-                  TextSendMessage(text=text)
-              )
-      return HttpResponse()
-  else:
-      return HttpResponseBadRequest()
+                text = 'Hi ' + display_name + "\n" + event.message.text
+                line_bot_api.reply_message(  # 回復傳入的訊息文字
+                    event.reply_token,
+                    TextSendMessage(text=text)
+                )
+        return HttpResponse()
+    else:
+        return HttpResponseBadRequest()
 
 def get_user_name(user_id):
     header = {'Authorization': 'Bearer ' + LINE_CHANNEL_ACCESS_TOKEN}
