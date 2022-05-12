@@ -1,0 +1,5 @@
+Django==4.0.4
+django_environ==0.8.1
+environ==1.0
+line_bot_sdk==2.2.1
+requests==2.27.1
