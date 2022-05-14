@@ -128,7 +128,7 @@ def search(user):
 
 def help():
     return """
-    Thanks for use this service.
+    Thanks for using this service.
 
     key:
         go + 'service name': change your account status to online.
