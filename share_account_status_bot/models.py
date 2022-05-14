@@ -6,13 +6,18 @@ class Service(models.Model):
 	name = models.CharField(max_length=100)
 	limit = models.IntegerField(default=1)
 
-	# def __str__(self):
-	#     return self.name
+	def __str__(self):
+	    return self.name
 
 class User(models.Model):
+	user_id = models.CharField(max_length=100)
 	name = models.CharField(max_length=100)
 	is_admin = models.BooleanField(default=False)
 	services = models.ManyToManyField(Service, through='UserService', through_fields=('user', 'service'))
+
+	def __str__(self):
+		return self.name
+
 
 class UserService(models.Model):
 	user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -22,3 +27,6 @@ class UserService(models.Model):
 	is_online = models.BooleanField(default=False)
 	login_devices_count = models.IntegerField(default=0)
 	time = models.TimeField(auto_now_add=True)
+
+	def __str__(self):
+		return self.account

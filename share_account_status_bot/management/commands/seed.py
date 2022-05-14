@@ -36,7 +36,7 @@ def create_data():
 		service = Service(name='kkbox')
 		service.save()
 		logging.info("{} service created.".format(service))
-		user = User(id='12345678', name='King')
+		user = User(user_id='userID0001', name='King', is_admin=True)
 		user.save()
 		logging.info("{} user created.".format(user))
 		user_service = UserService(user=user, service=service, account='k19980506')
@@ -53,7 +53,7 @@ def run_seed(self, mode):
 		# Clear data from tables
 		clear_data()
 		if mode == MODE_CLEAR:
-				return
+			return
 
 		# Creating dara
 		create_data()
