@@ -110,14 +110,18 @@ def help():
     Thanks for use this service.
 
     key:
-        go + 'streaming service name': change your account status to online.
-        stop + 'streaming service name': change your account status to offline.
+        go + 'service name': change your account status to online.
+        stop + 'service name': change your account status to offline.
         search: check the account status.
+        add + 'service name' + 'account': create your account. (If you are the account's owner)
+        use + 'service name' + account: add other's account to your account list.
 
     e.g.:
         go kkbox
         stop netflix
         search
+        add kkbox account
+        use netflix account
     """
 
 # add(user, service_name, account)
