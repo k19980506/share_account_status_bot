@@ -7,7 +7,7 @@ from linebot import LineBotApi, WebhookParser
 from linebot.exceptions import InvalidSignatureError, LineBotApiError
 from linebot.models import MessageEvent, TextSendMessage
 
-from share_account_status_bot.models import Service, User
+from share_account_status_bot.models import Service, User, UserService
 
 import logging
 
@@ -39,19 +39,29 @@ def callback(request):
                 user = create_or_retrieve_user(event.source.user_id)
                 user_id, display_name = user.user_id, user.name
 
-                logging.debug(event.message)
                 logging.debug('Text is: ' + event.message.text)
-                logging.debug('Name is: ' + display_name)
+
+                split_text = event.message.text.split(" ")
+
+                try:
+                    [action_type, service_name] = split_text
+                except ValueError:
+                    line_bot_api.reply_message(
+                        event.reply_token,
+                        TextSendMessage(text='Invalid Input')
+                    )
+                    return HttpResponseBadRequest()
 
                 switch = {
-                    'go': lambda: online(user_id),
-                    'stop': lambda: offline(user_id),
-                    'search': lambda: search(),
+                    'go': lambda _: online(user),
+                    'stop': lambda _: offline(user),
+                    'search': lambda _: search(),
+                    'add': lambda name: add(user, name),
                 }
 
-                text = switch.get(event.message.text, help)()
+                text = switch.get(action_type, help)(service_name)
 
-                line_bot_api.reply_message(  # 回復傳入的訊息文字
+                line_bot_api.reply_message(
                     event.reply_token,
                     TextSendMessage(text=text)
                 )
@@ -73,7 +83,7 @@ def create_or_retrieve_user(id):
         user = User(user_id=id, name=display_name)
         user.save()
 
-    logging.debug('User ' + str(user))
+    logging.debug('User: ' + str(user))
     return user
 
 def online(user):
@@ -108,3 +118,23 @@ def help():
         stop netflix
         search
     """
+
+def add(user, name):
+    if user.is_admin:
+        try:
+            service = Service.objects.get(name=name)
+        except Service.DoesNotExist:
+            logging.debug('Start to create service ....')
+            service = Service(name=name)
+            service.save()
+
+        logging.debug('Service: ' + str(service))
+        logging.debug('Start to create user_service ....')
+        user_service = UserService(user=user, service=service, account='k19980506')
+        user_service.save()
+
+        logging.debug('UserService: ' + str(user_service))
+        return "add success"
+    else:
+        return "Forbidden"
+

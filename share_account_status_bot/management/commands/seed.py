@@ -36,7 +36,7 @@ def create_data():
 		service = Service(name='kkbox')
 		service.save()
 		logging.info("{} service created.".format(service))
-		user = User(user_id='userID0001', name='King', is_admin=True)
+		user = User(user_id='U8a2912a17e66769d21cae5d95c628d5f', name='尚軒·ࡇ·', is_admin=True)
 		user.save()
 		logging.info("{} user created.".format(user))
 		user_service = UserService(user=user, service=service, account='k19980506')
