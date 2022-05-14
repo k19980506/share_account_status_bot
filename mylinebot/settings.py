@@ -32,8 +32,9 @@ SECRET_KEY = 'django-insecure-5cf&ry*$2q()v02g_$e9dhnuzkud6$a8)o0)@)=uj*r5*3u(u!
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    '9005-118-161-202-242.jp.ngrok.io'
+    'dff0-118-161-202-242.jp.ngrok.io'
 ]
+
 
 
 
@@ -46,6 +47,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_extensions',
 
     'share_account_status_bot.apps.ShareAccountStatusBotConfig',
 ]
@@ -86,8 +88,12 @@ WSGI_APPLICATION = 'mylinebot.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',  #PostgreSQL
+        'NAME': 'share_account_status_db',  #資料庫名稱
+        'USER': 'postgres',  #資料庫帳號
+        'PASSWORD': 'postgres',  #資料庫密碼
+        'HOST': '192.168.1.110',  #Server(伺服器)位址
+        'PORT': '5432'  #PostgreSQL Port號
     }
 }
 
