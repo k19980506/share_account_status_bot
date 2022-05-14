@@ -57,6 +57,7 @@ def callback(request):
                     'stop': lambda: offline(user, params),
                     'search': lambda: search(user),
                     'add': lambda: add(user, params),
+                    'use': lambda: use(user, params),
                 }
 
                 text = switch.get(action_type, help)()
@@ -87,12 +88,32 @@ def create_or_retrieve_user(id):
     return user
 
 def online(user, params):
+    try:
+        service_name = params[0]
+    except IndexError:
+        return "Invalid Input"
+
     # user_service = UserService.objects.get(user_id=user.user_id)
     # user_service.is_online = True
     # user_service.save()
     return user.name + " online."
 
 def offline(user, params):
+    # try:
+    #     service_name = params[0]
+    # except IndexError:
+    #     return "Invalid Input"
+
+    # try:
+    #     service = Service.objects.get(name=service_name.lower())
+    # except Service.DoesNotExist:
+    #     return 'Service Not Found'
+
+    # try:
+    #     service_account = ServiceAccount.objects.get(user=user, service=service)
+    # except ServiceAccount.DoesNotExist:
+    #     return "You don't have an account with {}\nPlease use add/use option to set account first".format(service_name)
+
     # user_service = UserService.objects.get(account='k19980506')
     # user_service.is_online = False
     # user_service.save()
@@ -133,10 +154,10 @@ def add(user, params):
             return "Invalid Input"
 
         try:
-            service = Service.objects.get(name=service_name)
+            service = Service.objects.get(name=service_name.lower())
         except Service.DoesNotExist:
             logging.debug('Start to create service ....')
-            service = Service(name=service_name)
+            service = Service(name=service_name.lower())
             service.save()
 
         logging.debug('Service: ' + str(service))
@@ -159,3 +180,27 @@ def add(user, params):
     else:
         return "Forbidden"
 
+def use(user, params):
+    try:
+        [service_name, account] = params[:2]
+    except IndexError:
+        return "Invalid Input"
+
+    try:
+        service = Service.objects.get(name=service_name.lower())
+    except Service.DoesNotExist:
+        return 'Service Not Found'
+
+    logging.debug('Service: ' + str(service))
+
+    try:
+        account = Account.objects.get(service=service, account=account)
+        logging.debug('Start to create service_account ....')
+        service_account = ServiceAccount(user=user, service=service, account=account)
+        service_account.save()
+        logging.debug('ServiceAccount: ' + str(service_account))
+
+    except Account.DoesNotExist:
+        return 'Account Not Found'
+
+    return "use success"
