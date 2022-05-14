@@ -7,7 +7,7 @@ from linebot import LineBotApi, WebhookParser
 from linebot.exceptions import InvalidSignatureError, LineBotApiError
 from linebot.models import MessageEvent, TextSendMessage
 
-from share_account_status_bot.models import Service, User, UserService
+from share_account_status_bot.models import Service, User, Account, AccountStatus, ServiceAccount
 
 import logging
 
@@ -43,23 +43,23 @@ def callback(request):
 
                 split_text = event.message.text.split(" ")
 
-                try:
-                    [action_type, service_name] = split_text
-                except ValueError:
-                    line_bot_api.reply_message(
-                        event.reply_token,
-                        TextSendMessage(text='Invalid Input')
-                    )
-                    return HttpResponseBadRequest()
+                # try:
+                action_type, params = split_text[0], split_text[1:]
+                # except ValueError:
+                #     line_bot_api.reply_message(
+                #         event.reply_token,
+                #         TextSendMessage(text='Invalid Input')
+                #     )
+                #     return HttpResponseBadRequest()
 
                 switch = {
-                    'go': lambda _: online(user),
-                    'stop': lambda _: offline(user),
-                    'search': lambda _: search(),
-                    'add': lambda name: add(user, name),
+                    'go': lambda: online(user, params),
+                    'stop': lambda: offline(user, params),
+                    'search': lambda: search(user),
+                    'add': lambda: add(user, params),
                 }
 
-                text = switch.get(action_type, help)(service_name)
+                text = switch.get(action_type, help)()
 
                 line_bot_api.reply_message(
                     event.reply_token,
@@ -86,19 +86,20 @@ def create_or_retrieve_user(id):
     logging.debug('User: ' + str(user))
     return user
 
-def online(user):
+def online(user, params):
     # user_service = UserService.objects.get(user_id=user.user_id)
     # user_service.is_online = True
     # user_service.save()
     return user.name + " online."
 
-def offline(user):
+def offline(user, params):
     # user_service = UserService.objects.get(account='k19980506')
     # user_service.is_online = False
     # user_service.save()
     return user.name + " offline."
 
-def search():
+def search(user):
+    # UserService.objects.filter(user_id=user.id)
     # s = Service.objects.get(account='k19980506')
     # logging.debug('Search:' + serializers.serialize('json', [s]))
     # return "online" if s.is_online else "offline"
@@ -119,21 +120,37 @@ def help():
         search
     """
 
-def add(user, name):
+# add(user, service_name, account)
+def add(user, params):
     if user.is_admin:
         try:
-            service = Service.objects.get(name=name)
+            [service_name, account] = params[:2]
+        except IndexError:
+            return "Invalid Input"
+
+        try:
+            service = Service.objects.get(name=service_name)
         except Service.DoesNotExist:
             logging.debug('Start to create service ....')
-            service = Service(name=name)
+            service = Service(name=service_name)
             service.save()
 
         logging.debug('Service: ' + str(service))
-        logging.debug('Start to create user_service ....')
-        user_service = UserService(user=user, service=service, account='k19980506')
-        user_service.save()
 
-        logging.debug('UserService: ' + str(user_service))
+        try:
+            Account(owner=user, service=service, account=account)
+            return "Account already created."
+        except Account.DoesNotExist:
+            logging.debug('Start to create account ....')
+            account = Account(owner=user, service=service, account=account)
+            account.save()
+            logging.debug('Account: ' + str(account))
+
+            logging.debug('Start to create service_account ....')
+            service_account = ServiceAccount(user=user, service=service, account=account)
+            service_account.save()
+            logging.debug('ServiceAccount: ' + str(service_account))
+
         return "add success"
     else:
         return "Forbidden"
