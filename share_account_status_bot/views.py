@@ -7,7 +7,7 @@ from linebot import LineBotApi, WebhookParser
 from linebot.exceptions import InvalidSignatureError, LineBotApiError
 from linebot.models import MessageEvent, TextSendMessage
 
-from share_account_status_bot.models import Service, User, Account, AccountStatus, ServiceAccount
+from share_account_status_bot.models import Service, User, Account, AccountStatus
 
 import logging
 
@@ -131,18 +131,20 @@ def help():
     Thanks for using this service.
 
     key:
+        [at first]
+        add + 'service name' + 'account': create your account. (If you are the account's owner)
+        use + 'service name' + account: add other's account to your account list.
+        -------
         go + 'service name': change your account status to online.
         stop + 'service name': change your account status to offline.
         search: check the account status.
-        add + 'service name' + 'account': create your account. (If you are the account's owner)
-        use + 'service name' + account: add other's account to your account list.
 
     e.g.:
+        add kkbox account
+        use netflix account
         go kkbox
         stop netflix
         search
-        add kkbox account
-        use netflix account
     """
 
 # add(user, service_name, account)
@@ -171,11 +173,6 @@ def add(user, params):
             account.save()
             logging.debug('Account: ' + str(account))
 
-            logging.debug('Start to create service_account ....')
-            service_account = ServiceAccount(user=user, service=service, account=account)
-            service_account.save()
-            logging.debug('ServiceAccount: ' + str(service_account))
-
         return "add success"
     else:
         return "Forbidden"
@@ -195,10 +192,10 @@ def use(user, params):
 
     try:
         account = Account.objects.get(service=service, account=account)
-        logging.debug('Start to create service_account ....')
-        service_account = ServiceAccount(user=user, service=service, account=account)
-        service_account.save()
-        logging.debug('ServiceAccount: ' + str(service_account))
+        logging.debug('Start to create account_status ....')
+        account_status = AccountStatus(service=service, account=account, user=user)
+        account_status.save()
+        logging.debug('AccountStatus: ' + str(account_status))
 
     except Account.DoesNotExist:
         return 'Account Not Found'
