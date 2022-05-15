@@ -158,11 +158,12 @@ def help():
     return """
     Thanks for using this service.
     Please use 'search' to check account status before you use 'go'.
+    When you first set up, you and your friends must use the same 'account name' to be able to bind to each other.
 
     key:
-        [at first]
-        add + 'service name' + 'account': create your account. (If you are the account's owner)
-        use + 'service name' + account: add other's account to your account list.
+        [set up]
+        add + 'service name' + 'account name': create your account. (If you are the account's owner)
+        use + 'service name' + 'account name': add other's account to your account list.
         -------
         search + 'service name': check the account status. (service name is optional, if you want to check all services, you can just input 'search')
         go + 'service name': change your account status to online.
