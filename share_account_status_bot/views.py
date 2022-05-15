@@ -98,6 +98,7 @@ def online(user, params):
     except AccountStatus.DoesNotExist:
         return "You don't have an account with {}\nPlease use add/use option to set account first".format(service_name)
 
+    logging.debug('Service {}, online'.format(service.name))
     return 'Hi {}, {} successfully launched.'.format(user.name, service_name)
 
 def offline(user, params):
@@ -118,6 +119,7 @@ def offline(user, params):
     except AccountStatus.DoesNotExist:
         return "You don't have an account with {}\nPlease use add/use option to set account first".format(service_name)
 
+    logging.debug('Service {}, offline'.format(service.name))
     return 'Hi {}, {} was successfully offline.'.format(user.name, service_name)
 
 def check_account_status(account_status):
