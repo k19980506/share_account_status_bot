@@ -47,7 +47,7 @@ def callback(request):
                 switch = {
                     'go': lambda: online(user, params),
                     'stop': lambda: offline(user, params),
-                    'search': lambda: search(user),
+                    'search': lambda: search(user, params),
                     'add': lambda: add(user, params),
                     'use': lambda: use(user, params),
                 }
@@ -104,11 +104,12 @@ def online(user, params):
 def offline(user, params):
     try:
         service_name = params[0]
+        service_name = service_name.lower()
     except IndexError:
         return "Invalid Input"
 
     try:
-        service = Service.objects.get(name=service_name.lower())
+        service = Service.objects.get(name=service_name)
     except Service.DoesNotExist:
         return 'Service Not Found'
 
@@ -123,13 +124,30 @@ def offline(user, params):
     return 'Hi {}, {} was successfully offline.'.format(user.name, service_name)
 
 def check_account_status(account_status):
-    if account_status.is_online:
-        return "{} account in use.".format(account_status.service.name)
-    else:
-        return "{} account not in use.".format(account_status.service.name)
+    same_account_users = list(account_status.account.accountstatus_set.all())
+    using_users = [same_account_users[i] for i in range(len(same_account_users)) if same_account_users[i].is_online]
 
-def search(user):
-    accounts = user.accountstatus_set.all()
+    if len(using_users):
+        users = ','.join(i.user.name for i in using_users)
+        return "{} account: {}, {} in use.".format(account_status.service.name, account_status.account.account, users)
+    else:
+        return "{} account: {} not in use.".format(account_status.service.name, account_status.account.account)
+
+def search(user, params):
+    logging.debug("Before search: {}".format(params))
+    try:
+        service_name = params[0]
+        service_name = service_name.lower()
+
+        try:
+            service = Service.objects.get(name=service_name)
+        except Service.DoesNotExist:
+            return 'Service Not Found'
+
+        accounts = user.accountstatus_set.filter(service=service)
+    except IndexError:
+        accounts = user.accountstatus_set.all()
+
     if len(accounts):
         return "\n".join(list(map(check_account_status, accounts)))
     else:
@@ -146,16 +164,17 @@ def help():
         add + 'service name' + 'account': create your account. (If you are the account's owner)
         use + 'service name' + account: add other's account to your account list.
         -------
-        search: check the account status.
+        search + 'service name': check the account status. (service name is optional, if you want to check all services, you can just input 'search')
         go + 'service name': change your account status to online.
         stop + 'service name': change your account status to offline.
 
     e.g.:
         add kkbox account
         use netflix account
+        search
+        search kkbox
         go kkbox
         stop netflix
-        search
     """
 
 # add(user, service_name, account)
