@@ -13,7 +13,7 @@ class User(models.Model):
 	user_id = models.CharField(max_length=100)
 	name = models.CharField(max_length=100)
 	is_admin = models.BooleanField(default=False)
-	services = models.ManyToManyField(Service, through='ServiceAccount', through_fields=('user', 'service'))
+	services = models.ManyToManyField(Service, through='AccountStatus', through_fields=('user', 'service'))
 
 	def __str__(self):
 		return self.name
@@ -28,14 +28,6 @@ class Account(models.Model):
 	def __str__(self):
 		return self.account
 
-class ServiceAccount(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    service = models.ForeignKey(Service, on_delete=models.CASCADE)
-    account = models.ForeignKey(Account, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return "{},{},{}".format(self.user.user_id, self.service.name, self.account.account)
-
 class AccountStatus(models.Model):
 	service = models.ForeignKey(Service, on_delete=models.CASCADE)
 	account = models.ForeignKey(Account, on_delete=models.CASCADE)
@@ -44,4 +36,4 @@ class AccountStatus(models.Model):
 	time = models.TimeField(auto_now_add=True)
 
 	def __str__(self):
-		return "{},{},{}".format(self.user.user_id, self.service.name, self.account.account)
+		return "{},{},{}".format(self.user.name, self.service.name, self.account.account)

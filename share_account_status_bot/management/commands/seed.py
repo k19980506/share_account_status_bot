@@ -1,7 +1,7 @@
 import logging
 from django.core.management.base import BaseCommand
 
-from share_account_status_bot.models import Service, User, Account, AccountStatus, ServiceAccount
+from share_account_status_bot.models import Service, User, Account, AccountStatus
 
 """ Clear all data and creates dummy data """
 MODE_REFRESH = 'refresh'
@@ -26,7 +26,6 @@ def clear_data():
 	User.objects.all().delete()
 	Service.objects.all().delete()
 	Account.objects.all().delete()
-	ServiceAccount.objects.all().delete()
 	AccountStatus.objects.all().delete()
 
 def create_data():
@@ -41,9 +40,6 @@ def create_data():
 	account = Account(owner=user, service=service, account='k19980506')
 	account.save()
 	logging.info("{} account created.".format(account))
-	service_account = ServiceAccount(user=user, service=service, account=account)
-	service_account.save()
-	logging.info("service_account created.")
 	account_status = AccountStatus(service=service, account=account, user=user)
 	account_status.save()
 	logging.info("account_status created.")
