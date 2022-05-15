@@ -11,8 +11,6 @@ from share_account_status_bot.models import Service, User, Account, AccountStatu
 
 import logging
 
-# Create your views here.
-
 logging.basicConfig(level=logging.DEBUG)
 
 LINE_CHANNEL_ACCESS_TOKEN = environ['LINE_CHANNEL_ACCESS_TOKEN']
@@ -92,14 +90,23 @@ def online(user, params):
         return 'Service Not Found'
 
     try:
-        account_status = AccountStatus.objects.get(service=service, user=user)
-        account_status.is_online = True
-        account_status.save()
-    except AccountStatus.DoesNotExist:
-        return "You don't have an account with {}\nPlease use add/use option to set account first".format(service_name)
+        account = Account.objects.get(service=service, account=params[1])
+        account_status = AccountStatus.objects.get(service=service, user=user, account=account)
+    except IndexError:
+        try:
+            account_status = AccountStatus.objects.get(service=service, user=user)
+        except AccountStatus.MultipleObjectsReturned:
+            return "You have more than one account, please specify account name."
+        except AccountStatus.DoesNotExist:
+            return "You don't have an account with {}\nPlease use add/use option to set account first".format(service_name)
+    except Account.DoesNotExist:
+        return "You don't have an account: {} with {}\nPlease use add/use option to set account first".format(params[1], service_name)
+
+    account_status.is_online = True
+    account_status.save()
 
     logging.debug('Service {}, online'.format(service.name))
-    return 'Hi {}, {} successfully launched.'.format(user.name, service_name)
+    return 'Hi {}, {} account: {} successfully launched.'.format(user.name, service_name, account_status.account.account)
 
 def offline(user, params):
     try:
@@ -114,14 +121,23 @@ def offline(user, params):
         return 'Service Not Found'
 
     try:
-        account_status = AccountStatus.objects.get(service=service, user=user)
-        account_status.is_online = False
-        account_status.save()
-    except AccountStatus.DoesNotExist:
-        return "You don't have an account with {}\nPlease use add/use option to set account first".format(service_name)
+        account = Account.objects.get(service=service, account=params[1])
+        account_status = AccountStatus.objects.get(service=service, user=user, account=account)
+    except IndexError:
+        try:
+            account_status = AccountStatus.objects.get(service=service, user=user)
+        except AccountStatus.MultipleObjectsReturned:
+            return "You have more than one account, please specify account name."
+        except AccountStatus.DoesNotExist:
+            return "You don't have an account with {}\nPlease use add/use option to set account first".format(service_name)
+    except Account.DoesNotExist:
+        return "You don't have an account: {} with {}\nPlease use add/use option to set account first".format(params[1], service_name)
+
+    account_status.is_online = False
+    account_status.save()
 
     logging.debug('Service {}, offline'.format(service.name))
-    return 'Hi {}, {} was successfully offline.'.format(user.name, service_name)
+    return 'Hi {}, {} account: {} was successfully offline.'.format(user.name, service_name, account_status.account.account)
 
 def check_account_status(account_status):
     same_account_users = list(account_status.account.accountstatus_set.all())
@@ -152,7 +168,6 @@ def search(user, params):
         return "\n".join(list(map(check_account_status, accounts)))
     else:
         return "You don't have any account.\nPlease use add/use option to set account first"
-
 
 def help():
     return """
