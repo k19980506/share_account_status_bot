@@ -42,15 +42,7 @@ def callback(request):
                 logging.debug('Text is: ' + event.message.text)
 
                 split_text = event.message.text.split(" ")
-
-                # try:
                 action_type, params = split_text[0], split_text[1:]
-                # except ValueError:
-                #     line_bot_api.reply_message(
-                #         event.reply_token,
-                #         TextSendMessage(text='Invalid Input')
-                #     )
-                #     return HttpResponseBadRequest()
 
                 switch = {
                     'go': lambda: online(user, params),
@@ -60,7 +52,7 @@ def callback(request):
                     'use': lambda: use(user, params),
                 }
 
-                text = switch.get(action_type, help)()
+                text = switch.get(action_type.lower(), help)()
 
                 line_bot_api.reply_message(
                     event.reply_token,
@@ -90,54 +82,71 @@ def create_or_retrieve_user(id):
 def online(user, params):
     try:
         service_name = params[0]
+        service_name = service_name.lower()
     except IndexError:
         return "Invalid Input"
 
-    # user_service = UserService.objects.get(user_id=user.user_id)
-    # user_service.is_online = True
-    # user_service.save()
-    return user.name + " online."
+    try:
+        service = Service.objects.get(name=service_name)
+    except Service.DoesNotExist:
+        return 'Service Not Found'
+
+    try:
+        account_status = AccountStatus.objects.get(service=service, user=user)
+        account_status.is_online = True
+        account_status.save()
+    except AccountStatus.DoesNotExist:
+        return "You don't have an account with {}\nPlease use add/use option to set account first".format(service_name)
+
+    return 'Hi {}, {} successfully launched.'.format(user.name, service_name)
 
 def offline(user, params):
-    # try:
-    #     service_name = params[0]
-    # except IndexError:
-    #     return "Invalid Input"
+    try:
+        service_name = params[0]
+    except IndexError:
+        return "Invalid Input"
 
-    # try:
-    #     service = Service.objects.get(name=service_name.lower())
-    # except Service.DoesNotExist:
-    #     return 'Service Not Found'
+    try:
+        service = Service.objects.get(name=service_name.lower())
+    except Service.DoesNotExist:
+        return 'Service Not Found'
 
-    # try:
-    #     service_account = ServiceAccount.objects.get(user=user, service=service)
-    # except ServiceAccount.DoesNotExist:
-    #     return "You don't have an account with {}\nPlease use add/use option to set account first".format(service_name)
+    try:
+        account_status = AccountStatus.objects.get(service=service, user=user)
+        account_status.is_online = False
+        account_status.save()
+    except AccountStatus.DoesNotExist:
+        return "You don't have an account with {}\nPlease use add/use option to set account first".format(service_name)
 
-    # user_service = UserService.objects.get(account='k19980506')
-    # user_service.is_online = False
-    # user_service.save()
-    return user.name + " offline."
+    return 'Hi {}, {} was successfully offline.'.format(user.name, service_name)
+
+def check_account_status(account_status):
+    if account_status.is_online:
+        return "{} account in use.".format(account_status.service.name)
+    else:
+        return "{} account not in use.".format(account_status.service.name)
 
 def search(user):
-    # UserService.objects.filter(user_id=user.id)
-    # s = Service.objects.get(account='k19980506')
-    # logging.debug('Search:' + serializers.serialize('json', [s]))
-    # return "online" if s.is_online else "offline"
-    return "search"
+    accounts = user.accountstatus_set.all()
+    if len(accounts):
+        return "\n".join(list(map(check_account_status, accounts)))
+    else:
+        return "You don't have any account.\nPlease use add/use option to set account first"
+
 
 def help():
     return """
     Thanks for using this service.
+    Please use 'search' to check account status before you use 'go'.
 
     key:
         [at first]
         add + 'service name' + 'account': create your account. (If you are the account's owner)
         use + 'service name' + account: add other's account to your account list.
         -------
+        search: check the account status.
         go + 'service name': change your account status to online.
         stop + 'service name': change your account status to offline.
-        search: check the account status.
 
     e.g.:
         add kkbox account
@@ -149,33 +158,35 @@ def help():
 
 # add(user, service_name, account)
 def add(user, params):
-    if user.is_admin:
-        try:
-            [service_name, account] = params[:2]
-        except IndexError:
-            return "Invalid Input"
+    logging.debug("Before add: {}".format(params))
+    try:
+        [service_name, account] = params[:2]
+    except IndexError:
+        return "Invalid Input"
 
-        try:
-            service = Service.objects.get(name=service_name.lower())
-        except Service.DoesNotExist:
-            logging.debug('Start to create service ....')
-            service = Service(name=service_name.lower())
-            service.save()
+    try:
+        service = Service.objects.get(name=service_name.lower())
+    except Service.DoesNotExist:
+        logging.debug('Start to create service ....')
+        service = Service(name=service_name.lower())
+        service.save()
 
-        logging.debug('Service: ' + str(service))
+    logging.debug('Service: ' + str(service))
 
-        try:
-            Account(owner=user, service=service, account=account)
-            return "Account already created."
-        except Account.DoesNotExist:
-            logging.debug('Start to create account ....')
-            account = Account(owner=user, service=service, account=account)
-            account.save()
-            logging.debug('Account: ' + str(account))
+    try:
+        Account.objects.get(owner=user, service=service, account=account)
+        return "Account already created."
+    except Account.DoesNotExist:
+        logging.debug('Start to create account ....')
+        account = Account(owner=user, service=service, account=account)
+        account.save()
+        logging.debug('Account: ' + str(account))
+        logging.debug('Start to create account_status ....')
+        account_status = AccountStatus(service=service, account=account, user=user)
+        account_status.save()
+        logging.debug('AccountStatus: ' + str(account_status))
 
-        return "add success"
-    else:
-        return "Forbidden"
+    return "add success"
 
 def use(user, params):
     try:
